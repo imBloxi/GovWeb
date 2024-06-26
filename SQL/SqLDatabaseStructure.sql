@@ -5,7 +5,6 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
 
-
 DROP TABLE IF EXISTS `businesses`;
 CREATE TABLE IF NOT EXISTS `businesses` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -44,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `civilians` (
 
 INSERT INTO `civilians` (`id`, `username`, `password`, `first_name`, `last_name`, `gender`, `email`, `phone`, `address`, `occupation`, `dob`, `person_code`) VALUES
 (1, 'john_doe', 'hashed_password1', 'John', 'Doe', 'male', 'john.doe@example.com', '1234567890', '123 Main St', 'Engineer', '1980-01-01', '1980-1234'),
-(2, 'jane_smith', 'hashed_password2', 'Jane', 'Smith', 'female', 'jane.smith@example.com', '0987654321', '456 Elm St', 'Doctor', '1990-02-02', '1990-5678'),
+(2, 'jane_smith', 'hashed_password2', 'Jane', 'Smith', 'female', 'jane.smith@example.com', '0987654321', '456 Elm St', 'Doctor', '1990-02-02', '1990-5678');
 
 DROP TABLE IF EXISTS `court_charges`;
 CREATE TABLE IF NOT EXISTS `court_charges` (
@@ -54,7 +53,6 @@ CREATE TABLE IF NOT EXISTS `court_charges` (
   PRIMARY KEY (`id`),
   KEY `document_id` (`document_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
 
 DROP TABLE IF EXISTS `court_documents`;
 CREATE TABLE IF NOT EXISTS `court_documents` (
@@ -67,7 +65,6 @@ CREATE TABLE IF NOT EXISTS `court_documents` (
   `description` text DEFAULT NULL,
   PRIMARY KEY (`document_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
 
 DROP TABLE IF EXISTS `court_files`;
 CREATE TABLE IF NOT EXISTS `court_files` (
@@ -93,7 +90,6 @@ CREATE TABLE IF NOT EXISTS `criminal_records` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
 
 DROP TABLE IF EXISTS `dispatch_notifications`;
 CREATE TABLE IF NOT EXISTS `dispatch_notifications` (
@@ -188,8 +184,6 @@ CREATE TABLE IF NOT EXISTS `warrants` (
   PRIMARY KEY (`warrant_id`),
   KEY `civilian_id` (`civilian_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-
 
 ALTER TABLE `businesses`
   ADD CONSTRAINT `businesses_ibfk_1` FOREIGN KEY (`owner_id`) REFERENCES `civilians` (`id`);
