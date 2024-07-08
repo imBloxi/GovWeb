@@ -5,6 +5,7 @@
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/BloxiHub/GovWeb?sort=semver)](https://github.com/apache/BloxiHub/GovWeb/tree/latest)
 # GovWeb
 Goverment inspired web databse managment system with many roles.
+Government database system 
 
 # Hosting
 - [WampServer](https://sourceforge.net/projects/wampserver/) - for local hosting 
