@@ -188,8 +188,15 @@ CREATE TABLE IF NOT EXISTS `warrants` (
 ALTER TABLE `businesses`
   ADD CONSTRAINT `businesses_ibfk_1` FOREIGN KEY (`owner_id`) REFERENCES `civilians` (`id`);
 
-ALTER TABLE `court_charges`
-  ADD CONSTRAINT `court_charges_ibfk_1` FOREIGN KEY (`document_id`) REFERENCES `court_documents` (`document_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE court_charges
+DROP FOREIGN KEY court_charges_ibfk_1;
+
+ALTER TABLE court_charges
+ADD CONSTRAINT court_charges_ibfk_1
+FOREIGN KEY (document_id)
+REFERENCES court_documents(document_id)
+ON DELETE RESTRICT
+ON UPDATE CASCADE;
 
 ALTER TABLE `licenses`
   ADD CONSTRAINT `licenses_ibfk_1` FOREIGN KEY (`civilian_id`) REFERENCES `civilians` (`id`);
