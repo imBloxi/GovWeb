@@ -1,0 +1,2 @@
+# Nothing in app/ should be served directly.
+Require all denied
