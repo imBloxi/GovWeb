@@ -1,0 +1,67 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_USER: root
+      DB_PASSWORD: root
+      APP_DEBUG: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: pdo_mysql, mbstring
+
+      - name: Check PHP syntax
+        run: find . -name '*.php' -not -path './tests/*' -print0 | xargs -0 -n1 php -l > /dev/null
+
+      - name: Load database
+        run: |
+          mysql -h 127.0.0.1 -uroot -proot < database/schema.sql
+          mysql -h 127.0.0.1 -uroot -proot < database/seed.sql
+
+      - name: Start PHP server
+        run: php -S 127.0.0.1:8080 > /tmp/php-server.log 2>&1 &
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+
+      - name: Install test tools
+        working-directory: tests
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run end-to-end tests
+        working-directory: tests
+        run: npx playwright test
+
+      - name: Show PHP server log
+        if: failure()
+        run: cat /tmp/php-server.log
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: tests/test-results

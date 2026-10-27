@@ -38,7 +38,8 @@ $recentPeople = can('civilians.view')
     : [];
 
 $activity = can('audit.view')
-    ? db_all('SELECT a.*, u.full_name FROM audit_log a LEFT JOIN users u ON u.id = a.user_id ORDER BY a.id DESC LIMIT 6')
+    ? db_all("SELECT a.*, u.full_name FROM audit_log a LEFT JOIN users u ON u.id = a.user_id
+              WHERE a.action NOT IN ('login', 'logout', 'login_failed') ORDER BY a.id DESC LIMIT 6")
     : [];
 
 $hour = (int) date('G');

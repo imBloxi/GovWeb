@@ -1,8 +1,10 @@
 # GovWeb
 
+[![Tests](https://github.com/imBloxi/GovWeb/actions/workflows/tests.yml/badge.svg)](https://github.com/imBloxi/GovWeb/actions/workflows/tests.yml)
+
 A records system for a (fictional) government: the civil register, licenses and businesses, police dispatch and warrants, and the courts. Each role sees only what it needs.
 
-Plain PHP 8 and MySQL, no framework and no build step, so it runs on a stock [WampServer](https://sourceforge.net/projects/wampserver/), XAMPP or any PHP host.
+Plain PHP (8.1 or newer) and MySQL or MariaDB, no framework and no build step, so it runs on a stock [WampServer](https://sourceforge.net/projects/wampserver/), XAMPP or any PHP host.
 
 ![Overview](docs/overview.png)
 
@@ -15,6 +17,8 @@ Plain PHP 8 and MySQL, no framework and no build step, so it runs on a stock [Wa
 | Police officer | Dispatch calls, criminal records, police operations. Requests and serves warrants |
 | Judge | Case files and court documents (printable). Issues or cancels warrants |
 | Civilian | Sees their own record: licenses, businesses, court documents |
+
+Choosing a person in any form is a search box: type part of a name or a person code. Registering someone with the same name and birth date as an existing person shows a warning first, to avoid duplicate records.
 
 Warrants follow a real approval chain: an officer requests one, a judge issues or cancels it, an officer marks it served.
 
@@ -49,20 +53,39 @@ All use the password `password`: `admin`, `registrar`, `officer`, `judge`, and `
 - Passwords are hashed with `password_hash`. Accounts lock for 10 minutes after 5 wrong passwords.
 - Permissions are checked on the server for every page and every action, not just hidden in the menu. They're defined in one place: `PERMISSIONS` in `app/auth.php`.
 - Sessions use HttpOnly, SameSite cookies, a new session ID on sign-in, and sign out after 2 hours idle.
-- Every change is written to the activity log with who made it and from which IP address.
+- Every change, sign-in, failed sign-in and lockout is written to the activity log with who and from which IP address.
+- A Content-Security-Policy only lets the browser load and run GovWeb's own files, so an injected script won't run even if some output were ever left unescaped.
+- Nothing loads from other sites. The Public Sans font is served locally, so no visitor IP addresses go to Google Fonts (a GDPR problem in the EU).
 - `app/` and `database/` have `.htaccess` files so Apache won't serve them. On other servers, point the web root away from them or block them.
+
+## Tests
+
+End-to-end tests (Playwright) sign in as every role, open every page, and walk through the main jobs: registering people, issuing licenses, the warrant approval chain, court documents, user management, plus checks that roles can't do each other's work. They run on GitHub Actions for every push.
+
+To run them yourself, import a fresh `schema.sql` and `seed.sql` (the tests change data), start the server, then:
+
+```sh
+cd tests
+npm install
+npx playwright install chromium
+npm test
+```
+
+Use `BASE_URL=http://localhost/GovWeb npm test` to test a WampServer install.
 
 ## Project layout
 
 ```
 app/            bootstrap, database helpers, auth, validation, layout (not web-accessible)
   views/        page layout, error page, the person record
-assets/         CSS, JavaScript, favicon
+assets/         CSS, JavaScript, fonts, favicon
 database/       schema.sql and seed.sql
 registry/       civilians, licenses, businesses
 police/         dispatch, warrants, criminal records
 court/          case files and court documents
 admin/          users and activity log
+api/            JSON search used by the person picker
+tests/          end-to-end tests
 index.php       overview with search and a "needs attention" list
 search.php      search across every register you have access to
 operations.php  police operations and public works (one page, two agencies)
@@ -74,4 +97,4 @@ Every page starts with `require .../app/bootstrap.php`, then calls `require_can(
 
 ## License
 
-GPL-3.0. See [LICENSE](LICENSE).
+GPL-3.0. See [LICENSE](LICENSE). The Public Sans font is under the SIL Open Font License (`assets/fonts/OFL.txt`).

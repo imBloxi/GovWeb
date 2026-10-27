@@ -36,7 +36,7 @@ page_start('Request warrant', 'warrants');
     <?= form_errors_summary($errors) ?>
     <form method="post" class="form-grid" novalidate>
         <?= csrf_field() ?>
-        <?= field('civilian_id', 'Person', ['type' => 'select', 'required' => true, 'blank' => 'Choose a person', 'options' => civilian_options(), 'wide' => true]) ?>
+        <?= person_field('civilian_id', 'Person', ['required' => true, 'wide' => true]) ?>
         <?= field('reason', 'Reason', ['required' => true, 'wide' => true, 'placeholder' => 'For example: Failure to appear in court']) ?>
         <?= field('description', 'Grounds', ['type' => 'textarea', 'wide' => true, 'rows' => 6, 'hint' => 'Evidence and circumstances the judge should know about.']) ?>
         <div class="form-actions">

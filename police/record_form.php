@@ -51,7 +51,7 @@ page_start($title, 'records');
     <?= form_errors_summary($errors) ?>
     <form method="post" class="form-grid" novalidate>
         <?= csrf_field() ?>
-        <?= field('civilian_id', 'Person', ['type' => 'select', 'required' => true, 'blank' => 'Choose a person', 'options' => civilian_options(), 'wide' => true]) ?>
+        <?= person_field('civilian_id', 'Person', ['required' => true, 'wide' => true]) ?>
         <?= field('offense', 'Offense', ['required' => true, 'placeholder' => 'For example: Theft']) ?>
         <?= field('offense_date', 'Date of offense', ['type' => 'date', 'required' => true, 'attrs' => 'max="' . date('Y-m-d') . '"']) ?>
         <?= field('sentence', 'Sentence', ['wide' => true, 'hint' => 'Leave empty until a court decides.']) ?>

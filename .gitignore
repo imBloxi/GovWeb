@@ -2,3 +2,6 @@ app/config.local.php
 .DS_Store
 .idea/
 .vscode/
+tests/node_modules/
+tests/test-results/
+tests/playwright-report/

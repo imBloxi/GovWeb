@@ -7,6 +7,7 @@ $id = input_int('id');
 $person = $id ? (db_one('SELECT * FROM civilians WHERE id = ?', [$id]) ?? abort(404)) : null;
 $errors = [];
 $values = $person ?? [];
+$duplicates = [];
 
 if (is_post() && input('_action') === 'delete' && $person) {
     db_delete('civilians', $id);
@@ -28,7 +29,16 @@ if (is_post() && input('_action') !== 'delete') {
     ]);
     $values = $data;
 
-    if (!$errors) {
+    // Same name and date of birth usually means the person is already registered.
+    if (!$errors && input('confirm_new_person') !== '1') {
+        $duplicates = db_all(
+            'SELECT id, first_name, last_name, person_code, address FROM civilians
+             WHERE first_name = ? AND last_name = ? AND dob = ? AND id <> ?',
+            [$data['first_name'], $data['last_name'], $data['dob'], $id ?? 0]
+        );
+    }
+
+    if (!$errors && !$duplicates) {
         try {
             if ($person) {
                 db_update('civilians', $id, $data);
@@ -63,6 +73,17 @@ page_start($title, 'civilians');
     <?= form_errors_summary($errors) ?>
     <form method="post" class="form-grid" novalidate>
         <?= csrf_field() ?>
+        <?php if ($duplicates): ?>
+            <div class="alert alert-warning field-wide" role="alert">
+                <p><?= count($duplicates) === 1 ? 'Someone' : count($duplicates) . ' people' ?> with this name and date of birth <?= count($duplicates) === 1 ? 'is' : 'are' ?> already in the register:</p>
+                <ul class="duplicate-list">
+                    <?php foreach ($duplicates as $d): ?>
+                        <li><a href="<?= e(url('registry/civilian.php', ['id' => $d['id']])) ?>"><?= e(full_name($d)) ?></a> <span class="code"><?= e($d['person_code']) ?></span><?= $d['address'] ? ', ' . e($d['address']) : '' ?></li>
+                    <?php endforeach; ?>
+                </ul>
+                <label class="checkbox"><input type="checkbox" name="confirm_new_person" value="1"> This is a different person. Save anyway.</label>
+            </div>
+        <?php endif; ?>
         <?= field('first_name', 'First name', ['required' => true, 'autocomplete' => 'off']) ?>
         <?= field('last_name', 'Last name', ['required' => true, 'autocomplete' => 'off']) ?>
         <?= field('dob', 'Date of birth', ['type' => 'date', 'required' => true, 'attrs' => 'max="' . date('Y-m-d') . '"']) ?>

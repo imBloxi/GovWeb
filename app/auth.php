@@ -99,6 +99,7 @@ function attempt_login(string $username, string $password): array|string
     if (!$user) {
         // Verify against a dummy hash so unknown usernames take as long as wrong passwords.
         password_verify($password, '$2y$10$tJuHx0z2z9vxRGdiI4xqVOqZNmh.iXDRfkwYFk8.L1Txz6.1/diTe');
+        audit('login_failed', 'user', null, 'Failed sign-in with unknown username "' . mb_substr($username, 0, 50) . '"');
         return 'Wrong username or password.';
     }
     if ($user['locked_until'] && strtotime($user['locked_until']) > time()) {
@@ -108,6 +109,9 @@ function attempt_login(string $username, string $password): array|string
         $fails = $user['failed_logins'] + 1;
         $lock = $fails >= MAX_FAILED_LOGINS ? date('Y-m-d H:i:s', time() + LOCKOUT_MINUTES * 60) : null;
         db_run('UPDATE users SET failed_logins = ?, locked_until = ? WHERE id = ?', [$lock ? 0 : $fails, $lock, $user['id']]);
+        audit('login_failed', 'user', (int) $user['id'], $lock
+            ? "{$user['username']} locked for " . LOCKOUT_MINUTES . ' minutes after ' . MAX_FAILED_LOGINS . ' failed sign-ins'
+            : "Failed sign-in for {$user['username']}");
         return 'Wrong username or password.';
     }
     if (password_needs_rehash($user['password_hash'], PASSWORD_DEFAULT)) {
@@ -118,11 +122,15 @@ function attempt_login(string $username, string $password): array|string
     session_regenerate_id(true);
     $_SESSION['user_id'] = (int) $user['id'];
     unset($_SESSION['csrf']);
+    audit('login', 'user', (int) $user['id'], "{$user['username']} signed in", (int) $user['id']);
     return $user;
 }
 
 function logout(): void
 {
+    if ($user = current_user()) {
+        audit('logout', 'user', (int) $user['id'], "{$user['username']} signed out");
+    }
     $_SESSION = [];
     session_regenerate_id(true);
 }

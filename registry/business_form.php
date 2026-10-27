@@ -67,7 +67,7 @@ page_start($title, 'businesses');
         <fieldset <?= $readOnly ? 'disabled' : '' ?> class="form-grid-fieldset">
             <?= field('name', 'Business name', ['required' => true, 'wide' => true]) ?>
             <?= field('business_type', 'Type of business', ['required' => true, 'placeholder' => 'For example: Retail, Construction']) ?>
-            <?= field('owner_id', 'Owner', ['type' => 'select', 'required' => true, 'blank' => 'Choose a person', 'options' => civilian_options()]) ?>
+            <?= person_field('owner_id', 'Owner', ['required' => true]) ?>
             <?= field('address', 'Address', ['required' => true, 'wide' => true]) ?>
             <?= field('registered_on', 'Registered on', ['type' => 'date', 'required' => true]) ?>
             <?= field('status', 'Status', ['type' => 'select', 'required' => true, 'options' => ['active' => 'Active', 'closed' => 'Closed']]) ?>

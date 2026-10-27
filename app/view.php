@@ -252,14 +252,41 @@ function form_errors_summary(array $errors): string
         . '</div>';
 }
 
-/** Options for a "choose a person" select: id => "Last, First (code)". */
-function civilian_options(): array
+// Up to this many people, the person picker includes everyone in the page,
+// so it works without JavaScript. Above it, only the chosen person is
+// included and the picker searches the register as you type.
+const PERSON_PRELOAD_LIMIT = 300;
+
+function person_label(array $c): string
 {
+    return $c['last_name'] . ', ' . $c['first_name'] . ' (' . $c['person_code'] . ')';
+}
+
+/** Options for a "choose a person" select: id => "Last, First (code)". */
+function civilian_options(?int $selected = null): array
+{
+    $sql = 'SELECT id, first_name, last_name, person_code FROM civilians';
+    $all = (int) db_value('SELECT COUNT(*) FROM civilians') <= PERSON_PRELOAD_LIMIT;
+    $rows = $all
+        ? db_all("$sql ORDER BY last_name, first_name")
+        : ($selected ? db_all("$sql WHERE id = ?", [$selected]) : []);
     $options = [];
-    foreach (db_all('SELECT id, first_name, last_name, person_code FROM civilians ORDER BY last_name, first_name') as $c) {
-        $options[$c['id']] = $c['last_name'] . ', ' . $c['first_name'] . ' (' . $c['person_code'] . ')';
+    foreach ($rows as $c) {
+        $options[$c['id']] = person_label($c);
     }
     return $options;
+}
+
+/** A person picker: a select that JavaScript turns into a search box. */
+function person_field(string $name, string $label, array $o = []): string
+{
+    $selected = filter_var(form_context()['values'][$name] ?? null, FILTER_VALIDATE_INT) ?: null;
+    return field($name, $label, $o + [
+        'type' => 'select',
+        'blank' => 'Choose a person',
+        'options' => civilian_options($selected),
+        'attrs' => 'data-person-picker="' . e(url('api/people.php')) . '"',
+    ]);
 }
 
 function person_link(array $row, string $prefix = '', string $idKey = 'civilian_id'): string

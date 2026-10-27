@@ -8,9 +8,7 @@ $appName = config('app_name');
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($title) ?> · <?= e($appName) ?></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400..700;1,400&display=swap">
+    <link rel="preload" href="<?= e(url('assets/fonts/public-sans-latin-wght-normal.woff2')) ?>" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
     <link rel="icon" href="<?= e(asset('favicon.svg')) ?>" type="image/svg+xml">
     <script src="<?= e(asset('js/app.js')) ?>" defer></script>

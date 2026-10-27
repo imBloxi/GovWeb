@@ -62,7 +62,7 @@ page_start($title, 'licenses');
     <?= form_errors_summary($errors) ?>
     <form method="post" class="form-grid" novalidate>
         <?= csrf_field() ?>
-        <?= field('civilian_id', 'Holder', ['type' => 'select', 'required' => true, 'blank' => 'Choose a person', 'options' => civilian_options(), 'wide' => true]) ?>
+        <?= person_field('civilian_id', 'Holder', ['required' => true, 'wide' => true]) ?>
         <?= field('license_type', 'Type', ['type' => 'select', 'required' => true, 'blank' => 'Choose', 'options' => ['car' => 'Car', 'motorcycle' => 'Motorcycle', 'scooter' => 'Scooter', 'truck' => 'Truck']]) ?>
         <?= field('status', 'Status', ['type' => 'select', 'required' => true, 'options' => ['active' => 'Active', 'suspended' => 'Suspended', 'revoked' => 'Revoked']]) ?>
         <?= field('issued_on', 'Issued on', ['type' => 'date', 'required' => true]) ?>

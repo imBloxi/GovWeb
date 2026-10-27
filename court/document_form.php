@@ -92,7 +92,7 @@ page_start($title, 'documents');
     <?= form_errors_summary($errors) ?>
     <form method="post" class="form-grid" novalidate>
         <?= csrf_field() ?>
-        <?= field('civilian_id', 'Person', ['type' => 'select', 'required' => true, 'blank' => 'Choose a person', 'options' => civilian_options(), 'wide' => true]) ?>
+        <?= person_field('civilian_id', 'Person', ['required' => true, 'wide' => true]) ?>
         <?= field('court_file_id', 'Case file', ['type' => 'select', 'blank' => 'Not filed under a case', 'options' => $fileOptions, 'wide' => true]) ?>
         <?= field('court_name', 'Court', ['required' => true, 'placeholder' => 'Riga City Court']) ?>
         <?= field('judge_name', 'Judge', ['required' => true]) ?>

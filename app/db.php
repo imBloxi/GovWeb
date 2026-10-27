@@ -101,10 +101,10 @@ function paginate(string $sql, string $countSql, array $params = [], int $perPag
 }
 
 /** Write a line to the activity log. */
-function audit(string $action, string $entity, ?int $entityId, string $summary): void
+function audit(string $action, string $entity, ?int $entityId, string $summary, ?int $userId = null): void
 {
     db_insert('audit_log', [
-        'user_id' => current_user()['id'] ?? null,
+        'user_id' => $userId ?? current_user()['id'] ?? null,
         'action' => $action,
         'entity' => $entity,
         'entity_id' => $entityId,

@@ -21,6 +21,9 @@ set_exception_handler('handle_exception');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: same-origin');
+// Only our own files may load or run. Blocks injected scripts even if escaping is ever missed.
+header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
+header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
 
 start_session();
 

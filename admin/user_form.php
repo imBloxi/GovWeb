@@ -88,7 +88,7 @@ page_start($title, 'users');
         <?= field('username', 'Username', ['required' => true, 'autocomplete' => 'off']) ?>
         <?= field('full_name', 'Full name', ['required' => true, 'autocomplete' => 'off']) ?>
         <?= field('role', 'Role', ['type' => 'select', 'required' => true, 'options' => ROLES]) ?>
-        <?= field('civilian_id', 'Linked person', ['type' => 'select', 'blank' => 'None', 'options' => civilian_options(), 'hint' => 'Required for civilian accounts.']) ?>
+        <?= person_field('civilian_id', 'Linked person', ['blank' => 'None', 'hint' => 'Required for civilian accounts.']) ?>
         <?= field('password', $account ? 'New password' : 'Password', [
             'type' => 'password', 'required' => !$account, 'autocomplete' => 'new-password', 'wide' => true,
             'hint' => $account ? 'Leave empty to keep the current password.' : 'At least 10 characters. Share it with the person securely.',
