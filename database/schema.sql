@@ -6,7 +6,8 @@ CREATE DATABASE IF NOT EXISTS `government_registration`
 USE `government_registration`;
 
 SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS audit_log, court_charges, court_documents, court_files,
+DROP TABLE IF EXISTS audit_log, notifications, recovery_codes, applications,
+  fines, vehicles, court_charges, court_documents, court_files,
   operations, dispatches, warrants, criminal_records, businesses, licenses,
   users, civilians;
 SET FOREIGN_KEY_CHECKS = 1;
@@ -34,6 +35,9 @@ CREATE TABLE users (
   full_name      VARCHAR(120) NOT NULL,
   role           ENUM('admin','registrar','officer','judge','civilian') NOT NULL,
   civilian_id    INT UNSIGNED NULL,
+  totp_secret    VARCHAR(64) NULL,          -- two-factor secret (base32), set while enabling
+  totp_enabled_at DATETIME NULL,            -- two-factor is on when this is set
+  totp_last_step BIGINT NULL,               -- last accepted code window, so a code can't be reused
   failed_logins  TINYINT UNSIGNED NOT NULL DEFAULT 0,
   locked_until   DATETIME NULL,
   last_login_at  DATETIME NULL,
@@ -154,6 +158,81 @@ CREATE TABLE court_charges (
   document_id  INT UNSIGNED NOT NULL,
   charge       VARCHAR(255) NOT NULL,
   CONSTRAINT fk_charges_document FOREIGN KEY (document_id) REFERENCES court_documents(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE recovery_codes (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,
+  code_hash  VARCHAR(255) NOT NULL,
+  used_at    DATETIME NULL,
+  CONSTRAINT fk_recovery_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE vehicles (
+  id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  plate             VARCHAR(12) NOT NULL UNIQUE,
+  vin               VARCHAR(17) NULL UNIQUE,
+  owner_id          INT UNSIGNED NOT NULL,
+  make              VARCHAR(40) NOT NULL,
+  model             VARCHAR(60) NOT NULL,
+  year              SMALLINT UNSIGNED NOT NULL,
+  color             VARCHAR(30) NULL,
+  status            ENUM('registered','stolen','deregistered') NOT NULL DEFAULT 'registered',
+  registered_on     DATE NOT NULL,
+  inspection_until  DATE NULL,
+  created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_vehicles_owner FOREIGN KEY (owner_id) REFERENCES civilians(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Fines are paid by bank transfer using the code as the payment reference;
+-- staff record the payment once it arrives.
+CREATE TABLE fines (
+  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  code          VARCHAR(20) NOT NULL UNIQUE,
+  civilian_id   INT UNSIGNED NOT NULL,
+  vehicle_id    INT UNSIGNED NULL,
+  amount_cents  INT UNSIGNED NOT NULL,
+  reason        VARCHAR(160) NOT NULL,
+  issued_by     INT UNSIGNED NULL,
+  issued_on     DATE NOT NULL,
+  due_on        DATE NOT NULL,
+  status        ENUM('unpaid','paid','cancelled') NOT NULL DEFAULT 'unpaid',
+  paid_on       DATE NULL,
+  created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_fines_status (status, due_on),
+  CONSTRAINT fk_fines_civilian FOREIGN KEY (civilian_id) REFERENCES civilians(id) ON DELETE CASCADE,
+  CONSTRAINT fk_fines_vehicle  FOREIGN KEY (vehicle_id)  REFERENCES vehicles(id) ON DELETE SET NULL,
+  CONSTRAINT fk_fines_user     FOREIGN KEY (issued_by)   REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Requests civilians send online. details holds the form fields as JSON.
+CREATE TABLE applications (
+  id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  code           VARCHAR(20) NOT NULL UNIQUE,
+  civilian_id    INT UNSIGNED NOT NULL,
+  type           ENUM('license','business','vehicle') NOT NULL,
+  details        TEXT NOT NULL,
+  status         ENUM('submitted','approved','rejected','withdrawn') NOT NULL DEFAULT 'submitted',
+  decision_note  VARCHAR(255) NULL,
+  decided_by     INT UNSIGNED NULL,
+  decided_at     DATETIME NULL,
+  created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_applications_status (status),
+  CONSTRAINT fk_applications_civilian FOREIGN KEY (civilian_id) REFERENCES civilians(id) ON DELETE CASCADE,
+  CONSTRAINT fk_applications_user     FOREIGN KEY (decided_by)  REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE notifications (
+  id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id     INT UNSIGNED NOT NULL,
+  title       VARCHAR(160) NOT NULL,
+  body        VARCHAR(255) NULL,
+  link        VARCHAR(255) NULL,
+  read_at     DATETIME NULL,
+  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_notifications_user (user_id, read_at),
+  CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE audit_log (

@@ -31,6 +31,17 @@ const PERMISSIONS = [
     'gov_ops.manage'    => ['registrar'],
     'court.view'        => ['judge'],
     'court.manage'      => ['judge'],
+    'vehicles.view'     => ['registrar', 'officer'],
+    'vehicles.manage'   => ['registrar'],
+    'vehicles.flag'     => ['officer'],          // mark stolen / recovered
+    'plate.check'       => ['officer'],
+    'fines.view'        => ['registrar', 'officer', 'judge'],
+    'fines.issue'       => ['officer', 'judge'],
+    'fines.record_payment' => ['registrar'],
+    'fines.cancel'      => ['judge'],
+    'applications.review' => ['registrar'],
+    'data.export'       => ['registrar'],        // CSV downloads of whole registers
+    'reports.view'      => [],
     'users.manage'      => [],
     'audit.view'        => [],
     'self.view'         => ['civilian'],
@@ -84,14 +95,30 @@ function current_user(): ?array
     static $user = false;
     if ($user === false) {
         $id = $_SESSION['user_id'] ?? null;
-        $user = $id ? db_one('SELECT id, username, full_name, role, civilian_id FROM users WHERE id = ?', [$id]) : null;
+        $user = $id ? db_one('SELECT id, username, full_name, role, civilian_id, totp_enabled_at FROM users WHERE id = ?', [$id]) : null;
     }
     return $user;
 }
 
+/** Count a failed attempt; lock the account after too many. */
+function record_failed_login(array $user, string $what = 'sign-in'): void
+{
+    $fails = (int) db_value('SELECT failed_logins FROM users WHERE id = ?', [$user['id']]) + 1;
+    $lock = $fails >= MAX_FAILED_LOGINS ? date('Y-m-d H:i:s', time() + LOCKOUT_MINUTES * 60) : null;
+    db_run('UPDATE users SET failed_logins = ?, locked_until = ? WHERE id = ?', [$lock ? 0 : $fails, $lock, $user['id']]);
+    audit('login_failed', 'user', (int) $user['id'], $lock
+        ? "{$user['username']} locked for " . LOCKOUT_MINUTES . ' minutes after ' . MAX_FAILED_LOGINS . ' failed attempts'
+        : "Failed $what for {$user['username']}");
+}
+
+function is_locked(array $user): bool
+{
+    return $user['locked_until'] && strtotime($user['locked_until']) > time();
+}
+
 /**
  * Check a username and password. Returns the user row, or an error string.
- * Locks the account for a while after too many failed attempts.
+ * Does not sign in: call complete_login(), or ask for a two-factor code first.
  */
 function attempt_login(string $username, string $password): array|string
 {
@@ -102,28 +129,40 @@ function attempt_login(string $username, string $password): array|string
         audit('login_failed', 'user', null, 'Failed sign-in with unknown username "' . mb_substr($username, 0, 50) . '"');
         return 'Wrong username or password.';
     }
-    if ($user['locked_until'] && strtotime($user['locked_until']) > time()) {
+    if (is_locked($user)) {
         return 'Too many failed attempts. Try again in ' . LOCKOUT_MINUTES . ' minutes.';
     }
     if (!password_verify($password, $user['password_hash'])) {
-        $fails = $user['failed_logins'] + 1;
-        $lock = $fails >= MAX_FAILED_LOGINS ? date('Y-m-d H:i:s', time() + LOCKOUT_MINUTES * 60) : null;
-        db_run('UPDATE users SET failed_logins = ?, locked_until = ? WHERE id = ?', [$lock ? 0 : $fails, $lock, $user['id']]);
-        audit('login_failed', 'user', (int) $user['id'], $lock
-            ? "{$user['username']} locked for " . LOCKOUT_MINUTES . ' minutes after ' . MAX_FAILED_LOGINS . ' failed sign-ins'
-            : "Failed sign-in for {$user['username']}");
+        record_failed_login($user);
         return 'Wrong username or password.';
     }
     if (password_needs_rehash($user['password_hash'], PASSWORD_DEFAULT)) {
         db_run('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash($password, PASSWORD_DEFAULT), $user['id']]);
     }
-    db_run('UPDATE users SET failed_logins = 0, locked_until = NULL, last_login_at = NOW() WHERE id = ?', [$user['id']]);
-
-    session_regenerate_id(true);
-    $_SESSION['user_id'] = (int) $user['id'];
-    unset($_SESSION['csrf']);
-    audit('login', 'user', (int) $user['id'], "{$user['username']} signed in", (int) $user['id']);
     return $user;
+}
+
+/** Start the signed-in session. Only call after every check has passed. */
+function complete_login(array $user): void
+{
+    db_run('UPDATE users SET failed_logins = 0, locked_until = NULL, last_login_at = NOW() WHERE id = ?', [$user['id']]);
+    session_regenerate_id(true);
+    unset($_SESSION['two_factor'], $_SESSION['csrf']);
+    $_SESSION['user_id'] = (int) $user['id'];
+    audit('login', 'user', (int) $user['id'], "{$user['username']} signed in", (int) $user['id']);
+}
+
+/** After sign-in, go back to the page the person wanted, or their home page. */
+function redirect_after_login(array $user): never
+{
+    $intended = $_SESSION['intended'] ?? null;
+    unset($_SESSION['intended']);
+    if (is_string($intended) && str_starts_with($intended, base_path() . '/')
+        && !str_starts_with($intended, '//') && !str_contains($intended, '\\')) {
+        header('Location: ' . $intended);
+        exit;
+    }
+    redirect($user['role'] === 'civilian' ? 'me.php' : 'index.php');
 }
 
 function logout(): void
@@ -141,6 +180,12 @@ function require_login(): array
     if (!$user) {
         $_SESSION['intended'] = $_SERVER['REQUEST_URI'] ?? null;
         redirect('login.php');
+    }
+    // Roles listed in config 'require_two_factor' must turn it on before doing anything else.
+    if (!two_factor_enabled($user) && in_array($user['role'], config('require_two_factor', []), true)
+        && basename($_SERVER['SCRIPT_NAME'] ?? '') !== 'account.php') {
+        flash('warning', 'Your role must use two-factor sign-in. Set it up to continue.');
+        redirect('account.php');
     }
     return $user;
 }

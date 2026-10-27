@@ -24,6 +24,18 @@ if (can('licenses.manage')) {
     $n = (int) db_value("SELECT COUNT(*) FROM licenses WHERE status = 'active' AND expires_on BETWEEN CURDATE() AND CURDATE() + INTERVAL 60 DAY");
     if ($n) $attention[] = [$n, $n === 1 ? 'license expires in the next 60 days' : 'licenses expire in the next 60 days', url('registry/licenses.php', ['status' => 'expiring']), 'registry'];
 }
+if (can('applications.review')) {
+    $n = (int) db_value("SELECT COUNT(*) FROM applications WHERE status = 'submitted'");
+    if ($n) $attention[] = [$n, $n === 1 ? 'application waiting for a decision' : 'applications waiting for a decision', url('registry/applications.php'), 'registry'];
+}
+if (can('fines.record_payment')) {
+    $n = (int) db_value("SELECT COUNT(*) FROM fines WHERE status = 'unpaid' AND due_on < CURDATE()");
+    if ($n) $attention[] = [$n, $n === 1 ? 'fine is overdue' : 'fines are overdue', url('police/fines.php', ['status' => 'overdue']), 'police'];
+}
+if (can('plate.check')) {
+    $n = (int) db_value("SELECT COUNT(*) FROM vehicles WHERE status = 'stolen'");
+    if ($n) $attention[] = [$n, $n === 1 ? 'vehicle reported stolen' : 'vehicles reported stolen', url('registry/vehicles.php', ['status' => 'stolen']), 'police'];
+}
 if (can('court.view')) {
     $n = (int) db_value("SELECT COUNT(*) FROM court_files WHERE status = 'open'");
     if ($n) $attention[] = [$n, $n === 1 ? 'open case file' : 'open case files', url('court/files.php', ['status' => 'open']), 'court'];
@@ -39,7 +51,7 @@ $recentPeople = can('civilians.view')
 
 $activity = can('audit.view')
     ? db_all("SELECT a.*, u.full_name FROM audit_log a LEFT JOIN users u ON u.id = a.user_id
-              WHERE a.action NOT IN ('login', 'logout', 'login_failed') ORDER BY a.id DESC LIMIT 6")
+              WHERE a.action IN ('create', 'update', 'delete') ORDER BY a.id DESC LIMIT 6")
     : [];
 
 $hour = (int) date('G');
@@ -53,7 +65,7 @@ page_start('Overview', 'dashboard');
     <form class="lookup-form" action="<?= e(url('search.php')) ?>" method="get" role="search">
         <label class="sr-only" for="lookup-q">Search records</label>
         <?= icon('search') ?>
-        <input id="lookup-q" type="search" name="q" placeholder="Search by name, person code, license, warrant or case number" autocomplete="off" autofocus>
+        <input id="lookup-q" type="search" name="q" placeholder="Search by name, person code, plate, license, warrant or case number" autocomplete="off" autofocus>
         <button class="btn btn-primary" type="submit">Search</button>
     </form>
 </section>

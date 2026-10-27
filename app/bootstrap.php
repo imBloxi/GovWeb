@@ -9,6 +9,9 @@ $GLOBALS['config'] = require __DIR__ . '/config.php';
 require __DIR__ . '/helpers.php';
 require __DIR__ . '/db.php';
 require __DIR__ . '/auth.php';
+require __DIR__ . '/notifications.php';
+require __DIR__ . '/records.php';
+require __DIR__ . '/totp.php';
 require __DIR__ . '/validation.php';
 require __DIR__ . '/view.php';
 

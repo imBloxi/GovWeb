@@ -8,6 +8,13 @@ $config = [
     'debug'    => filter_var(getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOL),
     // Lists the demo usernames on the sign-in page. Turn off once real accounts exist.
     'show_demo_accounts' => true,
+    // Roles that must use two-factor sign-in, for example ['admin', 'officer', 'judge'].
+    'require_two_factor' => [],
+    // Where civilians send fine payments. Shown on their record.
+    'payment' => [
+        'recipient' => 'State Treasury (demo)',
+        'iban'      => 'LV00 DEMO 0000 0000 0000 0',
+    ],
     'db' => [
         'host'     => getenv('DB_HOST') ?: '127.0.0.1',
         'port'     => (int) (getenv('DB_PORT') ?: 3306),

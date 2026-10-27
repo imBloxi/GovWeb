@@ -200,3 +200,16 @@ function initPersonPicker(select) {
 }
 
 document.querySelectorAll('select[data-person-picker]').forEach(initPersonPicker);
+
+// QR codes for two-factor setup: <div data-qr="otpauth://..."> (needs the qrcode-generator script on the page).
+document.querySelectorAll('[data-qr]').forEach((el) => {
+    if (typeof window.qrcode !== 'function') return;
+    const qr = window.qrcode(0, 'M');
+    qr.addData(el.dataset.qr);
+    qr.make();
+    const img = document.createElement('img');
+    img.src = qr.createDataURL(5, 2);
+    img.alt = '';
+    img.width = img.height = qr.getModuleCount() * 5 + 20;
+    el.append(img);
+});

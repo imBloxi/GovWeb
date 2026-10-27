@@ -3,8 +3,6 @@ require dirname(__DIR__) . '/app/bootstrap.php';
 
 require_can('licenses.manage');
 
-const LICENSE_PREFIX = ['car' => 'CAR', 'motorcycle' => 'MOT', 'scooter' => 'SCO', 'truck' => 'TRK'];
-
 $id = input_int('id');
 $license = $id ? (db_one('SELECT * FROM licenses WHERE id = ?', [$id]) ?? abort(404)) : null;
 $errors = [];
@@ -41,9 +39,7 @@ if (is_post() && input('_action') !== 'delete') {
             audit('update', 'license', $id, "Updated license {$license['license_number']}");
             flash('success', 'License saved.');
         } else {
-            do {
-                $data['license_number'] = LICENSE_PREFIX[$data['license_type']] . '-' . random_int(100000, 999999);
-            } while (db_value('SELECT 1 FROM licenses WHERE license_number = ?', [$data['license_number']]));
+            $data['license_number'] = new_license_number($data['license_type']);
             $id = db_insert('licenses', $data);
             audit('create', 'license', $id, "Issued license {$data['license_number']}");
             flash('success', "License {$data['license_number']} issued.");
@@ -63,7 +59,7 @@ page_start($title, 'licenses');
     <form method="post" class="form-grid" novalidate>
         <?= csrf_field() ?>
         <?= person_field('civilian_id', 'Holder', ['required' => true, 'wide' => true]) ?>
-        <?= field('license_type', 'Type', ['type' => 'select', 'required' => true, 'blank' => 'Choose', 'options' => ['car' => 'Car', 'motorcycle' => 'Motorcycle', 'scooter' => 'Scooter', 'truck' => 'Truck']]) ?>
+        <?= field('license_type', 'Type', ['type' => 'select', 'required' => true, 'blank' => 'Choose', 'options' => LICENSE_TYPES]) ?>
         <?= field('status', 'Status', ['type' => 'select', 'required' => true, 'options' => ['active' => 'Active', 'suspended' => 'Suspended', 'revoked' => 'Revoked']]) ?>
         <?= field('issued_on', 'Issued on', ['type' => 'date', 'required' => true]) ?>
         <?= field('expires_on', 'Expires on', ['type' => 'date', 'required' => true]) ?>

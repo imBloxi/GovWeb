@@ -22,6 +22,7 @@ if (is_post()) {
         } while (db_value('SELECT 1 FROM warrants WHERE code = ?', [$data['code']]));
         $id = db_insert('warrants', $data + ['status' => 'pending', 'requested_by' => $user['id']]);
         audit('create', 'warrant', $id, "Requested warrant {$data['code']}: {$data['reason']}");
+        notify_role('judge', "Warrant {$data['code']} needs a decision", $data['reason'], 'police/warrants.php?status=pending');
         flash('success', "Warrant {$data['code']} was sent to a judge for a decision.");
         redirect('police/warrants.php');
     }

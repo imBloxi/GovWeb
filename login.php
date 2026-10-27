@@ -15,13 +15,14 @@ if (is_post()) {
         if (($_POST['password'] ?? '') === 'password') {
             flash('warning', 'You signed in with the demo password. Change it on your account page.');
         }
-        $intended = $_SESSION['intended'] ?? null;
-        unset($_SESSION['intended']);
-        if (is_string($intended) && str_starts_with($intended, base_path() . '/') && !str_starts_with($intended, '//') && !str_contains($intended, '\\')) {
-            header('Location: ' . $intended);
-            exit;
+        if (two_factor_enabled($result)) {
+            // Password is right; the session stays signed out until the code is checked.
+            session_regenerate_id(true);
+            $_SESSION['two_factor'] = ['user_id' => (int) $result['id'], 'started' => time()];
+            redirect('login_2fa.php');
         }
-        redirect($result['role'] === 'civilian' ? 'me.php' : 'index.php');
+        complete_login($result);
+        redirect_after_login($result);
     }
     $error = $result;
 }

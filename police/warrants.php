@@ -23,6 +23,9 @@ if (is_post()) {
     }
     db_update('warrants', (int) $warrant['id'], $changes);
     audit('update', 'warrant', (int) $warrant['id'], "Warrant {$warrant['code']} changed from {$warrant['status']} to $to");
+    if ($permission === 'warrants.decide' && $warrant['requested_by']) {
+        notify_user((int) $warrant['requested_by'], "Warrant {$warrant['code']} was $to", $warrant['reason'], 'police/warrants.php?q=' . $warrant['code']);
+    }
     flash('success', "Warrant {$warrant['code']} is now $to.");
     back('police/warrants.php');
 }

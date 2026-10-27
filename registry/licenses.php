@@ -21,19 +21,27 @@ match ($status) {
 $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
 $from = "FROM licenses l JOIN civilians c ON c.id = l.civilian_id $where";
 
+if (input('export') === 'csv') {
+    require_can('data.export');
+    export_csv('licenses', ['Number', 'Holder', 'Type', 'Issued', 'Expires', 'Status'],
+        array_map(fn($l) => [$l['license_number'], full_name($l), $l['license_type'], $l['issued_on'], $l['expires_on'], license_status($l)],
+            db_all("SELECT l.*, c.first_name, c.last_name $from ORDER BY l.expires_on", $params)));
+}
+
 $result = paginate(
     "SELECT l.*, c.first_name, c.last_name $from ORDER BY l.expires_on",
     "SELECT COUNT(*) $from",
     $params
 );
 
-$types = ['car' => 'Car', 'motorcycle' => 'Motorcycle', 'scooter' => 'Scooter', 'truck' => 'Truck'];
+$types = LICENSE_TYPES;
 
 page_start('Licenses', 'licenses');
 page_header(
     'Licenses',
     'Driving licenses issued to people in the register',
-    can('licenses.manage') ? button_link('Issue license', url('registry/license_form.php'), 'primary', 'plus') : ''
+    (can('data.export') ? button_link('Download CSV', url('registry/licenses.php', $_GET + ['export' => 'csv']), 'secondary', 'download') : '')
+    . (can('licenses.manage') ? button_link('Issue license', url('registry/license_form.php'), 'primary', 'plus') : '')
 );
 echo search_bar('License number or holder', ['status' => [
     '' => 'All statuses', 'active' => 'Valid', 'expiring' => 'Expiring in 60 days', 'expired' => 'Expired',

@@ -209,6 +209,11 @@ body[data-dept="home"] .brand-mark::after { background: var(--registry); }
     border-radius: 0 3px 3px 0; background: var(--accent);
 }
 .nav-group a[aria-current="page"] .icon { color: var(--accent); }
+.nav-count {
+    margin-left: auto; min-width: 20px; padding: 0 6px; border-radius: 999px;
+    background: var(--bad); color: var(--surface);
+    font-size: 0.6875rem; font-weight: 700; line-height: 20px; text-align: center;
+}
 
 .sidebar-user {
     margin-top: auto; padding-top: 12px;
@@ -631,6 +636,140 @@ fieldset.form-grid-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
     .court-paper { border: 0; padding: 0; max-width: none; }
     a { color: inherit; text-decoration: none; }
 }
+
+/* ---------- Notifications ---------- */
+
+.notification-list {
+    list-style: none; margin: 0; padding: 0;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+}
+.notification-list li + li { border-top: 1px solid var(--line); }
+.notification-list a {
+    display: flex; flex-direction: column; gap: 2px;
+    padding: 14px 18px 14px 34px; position: relative;
+    color: var(--ink); text-decoration: none;
+}
+.notification-list a:hover { background: color-mix(in srgb, var(--accent) 4%, transparent); }
+.notification-title { font-weight: 500; }
+.is-unread .notification-title { font-weight: 700; }
+.is-unread a::before {
+    content: ""; position: absolute; left: 15px; top: 21px;
+    width: 8px; height: 8px; border-radius: 50%; background: var(--bad);
+}
+
+/* ---------- Applications ---------- */
+
+.choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 8px; }
+.choice {
+    display: flex; align-items: center; gap: 12px;
+    padding: 18px 20px; border-radius: var(--radius);
+    background: var(--surface); border: 1px solid var(--line);
+    color: var(--ink); text-decoration: none; font-weight: 600;
+}
+.choice .icon { color: var(--registry); width: 24px; height: 24px; }
+.choice:hover { border-color: var(--registry); }
+.application-list { list-style: none; margin: 12px 0 0; padding: 0; }
+.application-list li { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; padding: 14px 0; }
+.application-list li + li { border-top: 1px solid var(--line); }
+.application-list h3 { font-size: 1rem; margin: 4px 0 2px; }
+.decision-note {
+    margin-top: 6px; padding: 8px 12px; border-radius: var(--radius-sm);
+    background: var(--surface-sunk); font-size: 0.875rem;
+}
+.inline-facts { display: flex; flex-wrap: wrap; gap: 4px 24px; margin: 6px 0 0; }
+.inline-facts dt { color: var(--slate); font-size: 0.8125rem; }
+.inline-facts dd { margin: 0; font-weight: 500; }
+.decision-form { display: flex; flex-direction: column; gap: 8px; width: 280px; flex: none; }
+.decision-buttons { display: flex; gap: 6px; }
+.warrant[data-status="approved"], .warrant[data-status="rejected"], .warrant[data-status="withdrawn"] { opacity: 0.85; }
+
+@media (max-width: 860px) {
+    .choice-grid { grid-template-columns: minmax(0, 1fr); }
+    .decision-form { width: 100%; }
+}
+
+.pay-box {
+    margin: 4px 0 8px; padding: 12px 14px; border-radius: var(--radius-sm);
+    background: var(--warn-bg); color: var(--ink); font-size: 0.9375rem; max-width: 75ch;
+}
+
+/* ---------- Vehicles ---------- */
+
+/* Shaped like an EU number plate: blue country band, black border. */
+.plate-badge {
+    display: inline-flex; align-items: center; gap: 12px;
+    min-height: 44px; padding-right: 12px;
+    border: 2px solid #111; border-radius: 6px; overflow: hidden;
+    background: #fff; color: #111;
+    font-weight: 700; font-size: 1.5rem; letter-spacing: 0.08em; line-height: 1;
+}
+.plate-badge::before {
+    content: "LV"; align-self: stretch;
+    display: flex; align-items: flex-end; justify-content: center;
+    width: 26px; padding-bottom: 4px;
+    background: #1f3f99; color: #fff; font-size: 0.6875rem; letter-spacing: 0;
+}
+.plate-badge-lg { min-height: 60px; font-size: 2.25rem; }
+.plate-badge-lg::before { width: 34px; font-size: 0.8125rem; }
+
+.plate-result {
+    max-width: 860px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 24px;
+}
+.plate-result-head { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
+.plate-result-head h2 { font-size: 1.25rem; }
+.alerts-list { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.alert-item { padding: 9px 12px; border-radius: var(--radius-sm); font-weight: 600; margin: 0 0 16px; }
+.alerts-list .alert-item { margin: 0; }
+.alert-item-bad  { color: var(--bad);  background: var(--bad-bg); }
+.alert-item-warn { color: var(--warn); background: var(--warn-bg); }
+.alert-item-ok   { color: var(--ok);   background: var(--ok-bg); }
+.plate-actions { margin-top: 20px; }
+
+/* ---------- Two-factor ---------- */
+
+.setup-steps { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 20px; }
+.setup-steps > li > p:first-child { margin-bottom: 10px; }
+.qr img { display: block; background: #fff; border: 1px solid var(--line); border-radius: var(--radius-sm); image-rendering: pixelated; }
+.setup-key { margin-top: 8px; font-size: 1.0625rem; font-weight: 600; white-space: normal; word-spacing: 0.2em; }
+.recovery-codes {
+    display: grid; grid-template-columns: repeat(2, max-content); gap: 6px 32px;
+    margin: 12px 0 16px; padding-left: 1.6em; font-size: 1.0625rem; font-weight: 600;
+}
+.code-input { font-size: 1.375rem; letter-spacing: 0.25em; font-weight: 600; }
+.split-forms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 12px; }
+.auth-alt { margin-top: 18px; font-size: 0.875rem; }
+@media (max-width: 560px) { .split-forms { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Statistics ---------- */
+
+.tiles {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0 0 20px;
+}
+.tile {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px 16px; border-top: 3px solid var(--accent);
+}
+.tile dt { color: var(--slate); font-size: 0.8125rem; }
+.tile dd { margin: 4px 0 0; font-size: 1.5rem; font-weight: 650; letter-spacing: -0.01em; }
+.chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.chart-panel { margin: 0; }
+.chart-panel .panel-title { display: block; margin-bottom: 10px; }
+.chart { display: block; width: 100%; height: auto; overflow: visible; }
+.chart-rule { stroke: var(--line); stroke-width: 1; shape-rendering: crispEdges; }
+.chart-bar { fill: var(--accent); }
+.chart-hit { fill: transparent; }
+.chart-mark:hover .chart-bar { fill: color-mix(in srgb, var(--accent) 80%, var(--ink)); }
+.chart-mark:hover .chart-hit { fill: color-mix(in srgb, var(--accent) 6%, transparent); }
+.chart-tick { fill: var(--slate); font-size: 11px; }
+.chart-label { fill: var(--ink); font-size: 12px; }
+.chart-value { fill: var(--ink); font-size: 11px; font-weight: 600; }
+.chart-table { margin-top: 8px; font-size: 0.8125rem; }
+.chart-table summary { cursor: pointer; color: var(--slate); }
+.chart-table .table td { padding: 4px 0; }
+
+@media (max-width: 1080px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 860px) { .chart-grid { grid-template-columns: minmax(0, 1fr); } }
 
 /* ---------- Duplicate warning ---------- */
 

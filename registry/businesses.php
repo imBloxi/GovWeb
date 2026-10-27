@@ -11,13 +11,21 @@ if ($q !== '') {
     $params = array_fill(0, 3, "%$q%");
 }
 $from = "FROM businesses b JOIN civilians c ON c.id = b.owner_id $where";
+if (input('export') === 'csv') {
+    require_can('data.export');
+    export_csv('businesses', ['Name', 'Type', 'Owner', 'Address', 'Registered', 'Status'],
+        array_map(fn($b) => [$b['name'], $b['business_type'], full_name($b), $b['address'], $b['registered_on'], $b['status']],
+            db_all("SELECT b.*, c.first_name, c.last_name $from ORDER BY b.name", $params)));
+}
+
 $result = paginate("SELECT b.*, c.first_name, c.last_name $from ORDER BY b.name", "SELECT COUNT(*) $from", $params);
 
 page_start('Businesses', 'businesses');
 page_header(
     'Businesses',
     'Companies and sole traders in the business register',
-    can('businesses.manage') ? button_link('Register business', url('registry/business_form.php'), 'primary', 'plus') : ''
+    (can('data.export') ? button_link('Download CSV', url('registry/businesses.php', $_GET + ['export' => 'csv']), 'secondary', 'download') : '')
+    . (can('businesses.manage') ? button_link('Register business', url('registry/business_form.php'), 'primary', 'plus') : '')
 );
 echo search_bar('Business name, type or owner');
 ?>

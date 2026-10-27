@@ -207,13 +207,13 @@ test('admin deletes a person after confirming', async ({ page }) => {
 });
 
 test('accounts lock after repeated wrong passwords', async ({ page }) => {
-  for (let i = 0; i < 5; i++) await signIn(page, 'registrar', `wrong-${i}`);
-  await signIn(page, 'registrar');
+  for (let i = 0; i < 5; i++) await signIn(page, 'liga', `wrong-${i}`);
+  await signIn(page, 'liga', 'longenoughpass');
   await expect(page.locator('.alert')).toContainText('Too many failed attempts');
 
   await signIn(page, 'admin');
   await page.goto('admin/activity.php?kind=failed');
-  await expect(page.locator('tbody tr', { hasText: 'locked for 10 minutes' })).toHaveCount(1);
+  await expect(page.locator('tbody tr', { hasText: 'liga locked for 10 minutes' })).toHaveCount(1);
 });
 
 test('signing out ends the session', async ({ page }) => {

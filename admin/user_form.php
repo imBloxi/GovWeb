@@ -26,7 +26,16 @@ if (is_post() && input('_action') === 'unlock' && $account) {
     redirect('admin/user_form.php', ['id' => $id]);
 }
 
-if (is_post() && !in_array(input('_action'), ['delete', 'unlock'], true)) {
+if (is_post() && input('_action') === 'reset_2fa' && $account) {
+    db_run('UPDATE users SET totp_secret = NULL, totp_enabled_at = NULL, totp_last_step = NULL WHERE id = ?', [$id]);
+    db_run('DELETE FROM recovery_codes WHERE user_id = ?', [$id]);
+    audit('update', 'user', $id, "Reset two-factor sign-in for {$account['username']}");
+    notify_user($id, 'Your two-factor sign-in was reset by an administrator', 'Set it up again on your account page.', 'account.php');
+    flash('success', "Two-factor sign-in is off for {$account['username']}. They can set it up again after signing in.");
+    redirect('admin/user_form.php', ['id' => $id]);
+}
+
+if (is_post() && !in_array(input('_action'), ['delete', 'unlock', 'reset_2fa'], true)) {
     [$data, $errors] = validate([
         'username'    => 'required|min:3|max:50',
         'full_name'   => 'required|max:120',
@@ -105,6 +114,14 @@ page_start($title, 'users');
         <h2 class="panel-title">Locked after failed sign-ins</h2>
         <p class="muted">Locked until <?= e(format_datetime($account['locked_until'])) ?>.</p>
         <?= action_form('', ['_action' => 'unlock', 'id' => $id], 'Unlock now', 'secondary') ?>
+    </section>
+<?php endif; ?>
+
+<?php if ($account && two_factor_enabled($account) && !$isSelf): ?>
+    <section class="panel">
+        <h2 class="panel-title">Two-factor sign-in is on</h2>
+        <p class="muted">If they lost their phone and their recovery codes, reset it. Check who you're talking to first.</p>
+        <?= action_form('', ['_action' => 'reset_2fa', 'id' => $id], 'Reset two-factor', 'secondary', "Reset two-factor sign-in for {$account['username']}?") ?>
     </section>
 <?php endif; ?>
 

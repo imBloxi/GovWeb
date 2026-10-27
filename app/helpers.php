@@ -126,6 +126,22 @@ function format_datetime(?string $date): string
     return format_date($date, 'j M Y, H:i');
 }
 
+function format_money(int $cents): string
+{
+    return '€' . number_format($cents / 100, 2, '.', ' ');
+}
+
+/** "12.50" or "12,50" -> 1250. Returns null if it isn't a positive amount. */
+function parse_money(?string $value): ?int
+{
+    $value = str_replace([' ', ','], ['', '.'], (string) $value);
+    if (!preg_match('/^\d{1,7}(\.\d{1,2})?$/', $value)) {
+        return null;
+    }
+    $cents = (int) round(((float) $value) * 100);
+    return $cents > 0 ? $cents : null;
+}
+
 function time_ago(?string $date): string
 {
     if (!$date) {
@@ -177,4 +193,29 @@ function handle_exception(Throwable $e): void
             . 'and that you imported database/schema.sql.';
     }
     abort(500, $message);
+}
+
+/**
+ * Send rows as a CSV download and stop. Every export is logged, since it
+ * copies personal data out of the system.
+ */
+function export_csv(string $name, array $header, array $rows): never
+{
+    audit('export', $name, null, 'Downloaded ' . count($rows) . " rows of $name as CSV");
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $name . '-' . date('Y-m-d') . '.csv"');
+    header('Cache-Control: no-store');
+    $out = fopen('php://output', 'w');
+    fwrite($out, "\xEF\xBB\xBF"); // BOM so Excel reads UTF-8 (ā, š, ž) correctly
+    $safe = function ($value): string {
+        $value = (string) ($value ?? '');
+        // Stop spreadsheets from running cell text as a formula.
+        return preg_match('/^[=+\-@\t\r]/', $value) ? "'" . $value : $value;
+    };
+    fputcsv($out, $header, ',', '"', '');
+    foreach ($rows as $row) {
+        fputcsv($out, array_map($safe, $row), ',', '"', '');
+    }
+    fclose($out);
+    exit;
 }

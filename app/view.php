@@ -11,17 +11,23 @@ function navigation(): array
     return [
         ['label' => null, 'dept' => 'home', 'items' => [
             ['key' => 'dashboard', 'label' => 'Overview', 'href' => 'index.php', 'icon' => 'home', 'can' => null],
+            ['key' => 'notifications', 'label' => 'Notifications', 'href' => 'notifications.php', 'icon' => 'bell', 'can' => null],
             ['key' => 'me', 'label' => 'My record', 'href' => 'me.php', 'icon' => 'user', 'can' => 'self.view'],
+            ['key' => 'my_applications', 'label' => 'My applications', 'href' => 'applications.php', 'icon' => 'inbox', 'can' => 'self.view'],
         ]],
         ['label' => 'Registry', 'dept' => 'registry', 'items' => [
             ['key' => 'civilians', 'label' => 'Civilians', 'href' => 'registry/civilians.php', 'icon' => 'users', 'can' => 'civilians.view'],
+            ['key' => 'applications', 'label' => 'Applications', 'href' => 'registry/applications.php', 'icon' => 'inbox', 'can' => 'applications.review'],
             ['key' => 'licenses', 'label' => 'Licenses', 'href' => 'registry/licenses.php', 'icon' => 'card', 'can' => 'licenses.view'],
+            ['key' => 'vehicles', 'label' => 'Vehicles', 'href' => 'registry/vehicles.php', 'icon' => 'car', 'can' => 'vehicles.view'],
             ['key' => 'businesses', 'label' => 'Businesses', 'href' => 'registry/businesses.php', 'icon' => 'building', 'can' => 'businesses.view'],
             ['key' => 'gov_ops', 'label' => 'Public works', 'href' => 'operations.php?agency=government', 'icon' => 'flag', 'can' => 'gov_ops.view'],
         ]],
         ['label' => 'Police', 'dept' => 'police', 'items' => [
             ['key' => 'dispatch', 'label' => 'Dispatch', 'href' => 'police/dispatch.php', 'icon' => 'radio', 'can' => 'dispatch.use'],
+            ['key' => 'plate', 'label' => 'Plate check', 'href' => 'police/plate.php', 'icon' => 'scan', 'can' => 'plate.check'],
             ['key' => 'warrants', 'label' => 'Warrants', 'href' => 'police/warrants.php', 'icon' => 'stamp', 'can' => 'warrants.view'],
+            ['key' => 'fines', 'label' => 'Fines', 'href' => 'police/fines.php', 'icon' => 'receipt', 'can' => 'fines.view'],
             ['key' => 'records', 'label' => 'Criminal records', 'href' => 'police/records.php', 'icon' => 'shield', 'can' => 'records.view'],
             ['key' => 'police_ops', 'label' => 'Operations', 'href' => 'operations.php?agency=police', 'icon' => 'target', 'can' => 'police_ops.view'],
         ]],
@@ -30,6 +36,7 @@ function navigation(): array
             ['key' => 'documents', 'label' => 'Documents', 'href' => 'court/documents.php', 'icon' => 'file', 'can' => 'court.view'],
         ]],
         ['label' => 'Administration', 'dept' => 'admin', 'items' => [
+            ['key' => 'reports', 'label' => 'Statistics', 'href' => 'admin/reports.php', 'icon' => 'chart', 'can' => 'reports.view'],
             ['key' => 'users', 'label' => 'Users', 'href' => 'admin/users.php', 'icon' => 'key', 'can' => 'users.manage'],
             ['key' => 'activity', 'label' => 'Activity log', 'href' => 'admin/activity.php', 'icon' => 'list', 'can' => 'audit.view'],
         ]],
@@ -112,7 +119,16 @@ const STATUS_TONES = [
     'cancelled' => 'muted', 'suspended' => 'warn', 'revoked' => 'bad', 'expired' => 'bad',
     'open' => 'info', 'closed' => 'muted', 'planned' => 'info', 'completed' => 'muted',
     'urgent' => 'bad', 'normal' => 'info', 'low' => 'muted',
+    'submitted' => 'info', 'approved' => 'ok', 'rejected' => 'bad', 'withdrawn' => 'muted',
+    'registered' => 'ok', 'stolen' => 'bad', 'deregistered' => 'muted',
+    'unpaid' => 'warn', 'paid' => 'ok', 'overdue' => 'bad',
 ];
+
+/** Unpaid fines past their due date show as overdue. */
+function fine_status(array $fine): string
+{
+    return $fine['status'] === 'unpaid' && $fine['due_on'] < date('Y-m-d') ? 'overdue' : $fine['status'];
+}
 
 function badge(string $status, ?string $label = null): string
 {
@@ -327,6 +343,13 @@ function icon(string $name): string
         'edit' => '<path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/>',
         'menu' => '<path d="M4 7h16M4 12h16M4 17h16"/>',
         'arrow-left' => '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+        'bell' => '<path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15zM10 20.5a2.2 2.2 0 0 0 4 0"/>',
+        'inbox' => '<path d="M3 13.5 5.5 5h13l2.5 8.5V19H3zM3 13.5h5.5l1 2h5l1-2H21"/>',
+        'car' => '<path d="M4 16.5V12l2-5h12l2 5v4.5M4 12h16M3.5 16.5h17V19h-17zM7.5 14.5h.01M16.5 14.5h.01"/>',
+        'scan' => '<path d="M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3M7 12h10"/>',
+        'receipt' => '<path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21zM9 8h6M9 12h6M9 16h3"/>',
+        'chart' => '<path d="M4 20V4M4 20h16M8 16v-4M12 16V8M16 16v-6"/>',
+        'download' => '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
     ];
     return '<svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
         . ($paths[$name] ?? '') . '</svg>';

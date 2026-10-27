@@ -19,7 +19,7 @@ for (const role of ROLES) {
 
     while (queue.length && seen.size < 120) {
       const href = queue.shift();
-      if (seen.has(href) || !href.startsWith(baseURL) || href.includes('logout')) continue;
+      if (seen.has(href) || !href.startsWith(baseURL) || href.includes('logout') || href.includes('export=')) continue;
       seen.add(href);
       const response = await page.goto(href);
       const html = await page.content();

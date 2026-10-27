@@ -12,7 +12,8 @@ if ($q !== '') {
     array_push($params, "%$q%", "%$q%");
 }
 match ($kind) {
-    'changes' => $conditions[] = "a.action NOT IN ('login', 'logout', 'login_failed')",
+    'changes' => $conditions[] = "a.action IN ('create', 'update', 'delete')",
+    'access' => $conditions[] = "a.action IN ('lookup', 'export')",
     'signins' => $conditions[] = "a.action IN ('login', 'logout', 'login_failed')",
     'failed' => $conditions[] = "a.action = 'login_failed'",
     default => null,
@@ -24,7 +25,7 @@ $result = paginate("SELECT a.*, u.username, u.full_name $from ORDER BY a.id DESC
 page_start('Activity log', 'activity');
 page_header('Activity log', 'Every change and sign-in, newest first');
 echo search_bar('What changed, or username', ['kind' => [
-    '' => 'Everything', 'changes' => 'Changes to records', 'signins' => 'Sign-ins and sign-outs', 'failed' => 'Failed sign-ins',
+    '' => 'Everything', 'changes' => 'Changes to records', 'access' => 'Lookups and exports', 'signins' => 'Sign-ins and sign-outs', 'failed' => 'Failed sign-ins',
 ]]);
 ?>
 <?php if ($result['rows']): ?>

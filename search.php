@@ -32,6 +32,28 @@ if ($q !== '') {
             url('registry/civilian.php', ['id' => $r['civilian_id']]), $r['license_number'], ucfirst($r['license_type']) . ' license, ' . full_name($r),
         ], $rows)];
     }
+    if (can('vehicles.view')) {
+        $plate = '%' . str_replace('-', '', normalize_plate($q)) . '%';
+        $rows = db_all(
+            "SELECT id, plate, make, model, year, status FROM vehicles
+             WHERE REPLACE(plate, '-', '') LIKE ? OR vin LIKE ? LIMIT 10",
+            [$plate, $like]
+        );
+        $groups['Vehicles'] = ['registry', array_map(fn($r) => [
+            url('registry/vehicle_form.php', ['id' => $r['id']]), $r['plate'],
+            "{$r['year']} {$r['make']} {$r['model']}" . ($r['status'] === 'stolen' ? ', reported stolen' : ''),
+        ], $rows)];
+    }
+    if (can('fines.view')) {
+        $rows = db_all(
+            'SELECT f.code, f.reason, f.amount_cents, c.first_name, c.last_name FROM fines f
+             JOIN civilians c ON c.id = f.civilian_id WHERE f.code LIKE ? LIMIT 10',
+            [$like]
+        );
+        $groups['Fines'] = ['police', array_map(fn($r) => [
+            url('police/fines.php', ['q' => $r['code']]), $r['code'], format_money((int) $r['amount_cents']) . ', ' . $r['reason'] . ', ' . full_name($r),
+        ], $rows)];
+    }
     if (can('businesses.view')) {
         $rows = db_all('SELECT id, name, business_type FROM businesses WHERE name LIKE ? LIMIT 10', [$like]);
         $groups['Businesses'] = ['registry', array_map(fn($r) => [
@@ -66,7 +88,7 @@ page_start($q === '' ? 'Search' : "Search: $q", 'dashboard');
 <form class="lookup-form" method="get" role="search">
     <label class="sr-only" for="search-q">Search records</label>
     <?= icon('search') ?>
-    <input id="search-q" type="search" name="q" value="<?= e($q) ?>" placeholder="Search by name, person code, license, warrant or case number" autofocus>
+    <input id="search-q" type="search" name="q" value="<?= e($q) ?>" placeholder="Search by name, person code, plate, license, warrant or case number" autofocus>
     <button class="btn btn-primary" type="submit">Search</button>
 </form>
 

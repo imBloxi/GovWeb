@@ -5,6 +5,7 @@ const PASSWORD = 'password';
 const PHP_ERROR = /(Warning|Fatal error|Deprecated|Notice|Parse error)\b.{0,300} on line \d+|Uncaught \w+/;
 
 async function signIn(page, username, password = PASSWORD) {
+  await page.context().clearCookies(); // start signed out, even if another user was signed in
   await page.goto('login.php');
   await page.fill('#username', username);
   await page.fill('#password', password);

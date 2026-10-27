@@ -28,13 +28,14 @@ echo search_bar('Username or name', ['role' => ['' => 'All roles'] + ROLES]);
 ?>
 <div class="table-wrap">
     <table class="table table-hover">
-        <thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Last sign-in</th><th>Status</th></tr></thead>
+        <thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Two-factor</th><th>Last sign-in</th><th>Status</th></tr></thead>
         <tbody>
         <?php foreach ($result['rows'] as $u): ?>
             <tr>
                 <td class="code"><a class="row-link" href="<?= e(url('admin/user_form.php', ['id' => $u['id']])) ?>"><?= e($u['username']) ?></a></td>
                 <td><?= e($u['full_name']) ?><?php if ($u['civilian_id']): ?><p class="muted small">Linked to <?= person_link($u) ?></p><?php endif; ?></td>
                 <td><?= e(role_label($u['role'])) ?></td>
+                <td><?= $u['totp_enabled_at'] ? badge('active', 'On') : '<span class="muted">Off</span>' ?></td>
                 <td><?= $u['last_login_at'] ? e(time_ago($u['last_login_at'])) : '<span class="muted">Never</span>' ?></td>
                 <td><?= ($u['locked_until'] && strtotime($u['locked_until']) > time()) ? badge('revoked', 'Locked') : badge('active') ?></td>
             </tr>

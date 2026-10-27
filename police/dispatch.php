@@ -23,6 +23,9 @@ if (is_post() && input('_action') === 'send') {
     if (!$errors) {
         $id = db_insert('dispatches', $data + ['created_by' => $user['id']]);
         audit('create', 'dispatch', $id, 'Sent dispatch: ' . $data['message']);
+        if ($data['priority'] === 'urgent') {
+            notify_role('officer', 'Urgent dispatch' . ($data['location'] ? ': ' . $data['location'] : ''), $data['message'], 'police/dispatch.php');
+        }
         flash('success', 'Dispatch sent to all units.');
         redirect('police/dispatch.php');
     }

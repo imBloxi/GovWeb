@@ -15,6 +15,10 @@ $records = can('records.view')
     ? db_all('SELECT r.*, u.full_name AS officer FROM criminal_records r LEFT JOIN users u ON u.id = r.officer_id WHERE r.civilian_id = ? ORDER BY offense_date DESC', [$id]) : null;
 $warrants = can('warrants.view')
     ? db_all('SELECT * FROM warrants WHERE civilian_id = ? ORDER BY created_at DESC', [$id]) : null;
+$vehicles = ($self || can('vehicles.view'))
+    ? db_all('SELECT * FROM vehicles WHERE owner_id = ? ORDER BY status = \'deregistered\', registered_on DESC', [$id]) : null;
+$fines = ($self || can('fines.view'))
+    ? db_all('SELECT * FROM fines WHERE civilian_id = ? ORDER BY status = \'unpaid\' DESC, issued_on DESC', [$id]) : null;
 $documents = ($self || can('court.view'))
     ? db_all('SELECT * FROM court_documents WHERE civilian_id = ? ORDER BY court_date DESC', [$id]) : null;
 
@@ -29,7 +33,11 @@ $activeWarrants = $warrants ? count(array_filter($warrants, fn($w) => $w['status
                 <p class="record-flag"><?= icon('stamp') ?> <?= $activeWarrants === 1 ? 'Active warrant' : "$activeWarrants active warrants" ?></p>
             <?php endif; ?>
         </div>
-        <?php if (!$self && can('civilians.manage')): ?>
+        <?php if ($self): ?>
+            <div class="page-actions">
+                <?= button_link('Update my details', url('me_edit.php'), 'secondary', 'edit') ?>
+            </div>
+        <?php elseif (can('civilians.manage')): ?>
             <div class="page-actions">
                 <?= button_link('Edit details', url('registry/civilian_form.php', ['id' => $id]), 'secondary', 'edit') ?>
             </div>
@@ -68,6 +76,65 @@ $activeWarrants = $warrants ? count(array_filter($warrants, fn($w) => $w['status
             </table></div>
         <?php else: ?>
             <p class="muted">No licenses.</p>
+        <?php endif; ?>
+    </section>
+    <?php endif; ?>
+
+    <?php if ($vehicles !== null): ?>
+    <section class="record-section" data-dept="registry">
+        <div class="panel-head">
+            <h2 class="panel-title">Vehicles</h2>
+            <?php if (!$self && can('vehicles.manage')) echo button_link('Register vehicle', url('registry/vehicle_form.php', ['owner_id' => $id]), 'ghost', 'plus'); ?>
+        </div>
+        <?php if ($vehicles): ?>
+            <div class="table-scroll"><table class="table">
+                <thead><tr><th>Plate</th><th>Vehicle</th><th>Inspection until</th><th>Status</th></tr></thead>
+                <tbody>
+                <?php foreach ($vehicles as $v): ?>
+                    <tr>
+                        <td class="code"><?php if (!$self && can('vehicles.view')): ?><a href="<?= e(url('registry/vehicle_form.php', ['id' => $v['id']])) ?>"><?= e($v['plate']) ?></a><?php else: ?><?= e($v['plate']) ?><?php endif; ?></td>
+                        <td><?= e($v['year'] . ' ' . $v['make'] . ' ' . $v['model']) ?><?= $v['color'] ? ', ' . e(mb_strtolower($v['color'])) : '' ?></td>
+                        <td><?= $v['inspection_until'] ? e(format_date($v['inspection_until'])) . ($v['inspection_until'] < date('Y-m-d') ? ' ' . badge('expired', 'Overdue') : '') : '<span class="muted">Not recorded</span>' ?></td>
+                        <td><?= badge($v['status']) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table></div>
+        <?php else: ?>
+            <p class="muted">No vehicles.</p>
+        <?php endif; ?>
+    </section>
+    <?php endif; ?>
+
+    <?php if ($fines !== null): ?>
+    <section class="record-section" data-dept="police">
+        <div class="panel-head">
+            <h2 class="panel-title">Fines</h2>
+            <?php if (!$self && can('fines.issue')) echo button_link('Issue fine', url('police/fine_form.php', ['civilian_id' => $id]), 'ghost', 'plus'); ?>
+        </div>
+        <?php if ($fines): ?>
+            <?php $unpaid = array_filter($fines, fn($f) => $f['status'] === 'unpaid'); ?>
+            <?php if ($self && $unpaid): ?>
+                <div class="pay-box">
+                    <p><strong>To pay, make a bank transfer</strong> to <?= e(config('payment.recipient')) ?>, account <span class="code"><?= e(config('payment.iban')) ?></span>. Use the fine code as the payment reference. Payments show here within 2 working days.</p>
+                </div>
+            <?php endif; ?>
+            <div class="table-scroll"><table class="table">
+                <thead><tr><th>Code</th><th>Reason</th><th class="num">Amount</th><th>Due</th><th>Status</th></tr></thead>
+                <tbody>
+                <?php foreach ($fines as $f): ?>
+                    <tr>
+                        <td class="code"><?= e($f['code']) ?></td>
+                        <td><?= e($f['reason']) ?></td>
+                        <td class="num"><?= e(format_money((int) $f['amount_cents'])) ?></td>
+                        <td><?= e(format_date($f['due_on'])) ?></td>
+                        <td><?= badge(fine_status($f)) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table></div>
+        <?php else: ?>
+            <p class="muted">No fines.</p>
         <?php endif; ?>
     </section>
     <?php endif; ?>

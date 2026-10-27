@@ -11,6 +11,9 @@ $appName = config('app_name');
     <link rel="preload" href="<?= e(url('assets/fonts/public-sans-latin-wght-normal.woff2')) ?>" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
     <link rel="icon" href="<?= e(asset('favicon.svg')) ?>" type="image/svg+xml">
+    <?php foreach ($options['scripts'] ?? [] as $script): ?>
+        <script src="<?= e(asset($script)) ?>" defer></script>
+    <?php endforeach; ?>
     <script src="<?= e(asset('js/app.js')) ?>" defer></script>
 </head>
 <body data-dept="<?= e($dept) ?>">
@@ -35,7 +38,8 @@ $appName = config('app_name');
                     <?php if ($group['label']): ?><p class="nav-group-label"><?= e($group['label']) ?></p><?php endif; ?>
                     <ul>
                         <?php foreach ($items as $item): ?>
-                            <li><a href="<?= e(url($item['href'])) ?>"<?= $item['key'] === $nav ? ' aria-current="page"' : '' ?>><?= icon($item['icon']) ?><span><?= e($item['label']) ?></span></a></li>
+                            <?php $count = $item['key'] === 'notifications' ? unread_notifications() : 0; ?>
+                            <li><a href="<?= e(url($item['href'])) ?>"<?= $item['key'] === $nav ? ' aria-current="page"' : '' ?>><?= icon($item['icon']) ?><span><?= e($item['label']) ?></span><?php if ($count): ?><span class="nav-count"><?= $count > 99 ? '99+' : $count ?><span class="sr-only"> unread</span></span><?php endif; ?></a></li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
